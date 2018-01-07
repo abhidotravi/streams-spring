@@ -1,11 +1,15 @@
 package com.mapr.streams.examples;
 
 import org.apache.commons.lang3.RandomStringUtils;
+import org.apache.kafka.clients.admin.AdminClient;
+import org.apache.kafka.clients.admin.KafkaAdminClient;
+import org.apache.kafka.clients.admin.ListTopicsResult;
 import org.apache.kafka.clients.producer.RecordMetadata;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.kafka.core.KafkaAdmin;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.support.SendResult;
 import org.springframework.test.context.junit4.SpringRunner;
@@ -25,6 +29,8 @@ public class StreamsSpringApplicationTest {
     private KafkaTemplate<String, String> kafkaTemplate;
     @Autowired
     private StandaloneListener standaloneListener;
+    @Autowired
+    private KafkaAdmin streamsAdmin;
 
     @Test
     public void testKafkaTemplateSendAsync() throws InterruptedException {
@@ -45,7 +51,7 @@ public class StreamsSpringApplicationTest {
                             ", offset=" + recordMetadata.offset() +
                             ", hasTimestamp=" + recordMetadata.hasTimestamp() +
                             ", timestamp=" + recordMetadata.timestamp() + ")";
-                    System.out.println("Success: \n" + result.getProducerRecord().toString() + "\n" + info);
+                    //System.out.println("Success: \n" + result.getProducerRecord().toString() + "\n" + info);
                 }
 
                 @Override
@@ -65,6 +71,14 @@ public class StreamsSpringApplicationTest {
         testKafkaTemplateSendAsync();
         System.out.println(Thread.currentThread().getId());
         assertThat(this.standaloneListener.countDownLatch.await(60, TimeUnit.SECONDS)).isTrue();
+
+    }
+
+    @Test
+    public void testKafkaAdmin() throws Exception {
+        AdminClient adminClient = AdminClient.create(streamsAdmin.getConfig());
+        ListTopicsResult topics = adminClient.listTopics();
+        topics.names().get().forEach(System.out::println);
 
     }
 
